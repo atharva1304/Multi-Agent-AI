@@ -1,0 +1,87 @@
+// ============================================================
+// Prisma Schema - Multi-Agent Research Automation Platform
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Conversations
+// ============================================================
+model Conversation {
+  id        String    @id @default(uuid())
+  userId    String
+  title     String    @default("New Conversation")
+  messages  Message[]
+  metadata  Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("conversations")
+}
+
+// ============================================================
+// Messages
+// ============================================================
+model Message {
+  id              String       @id @default(uuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role            String
+  content         String
+  agentType       String?
+  citations       Citation[]
+  confidenceScore Float?
+  metadata        Json?
+  createdAt       DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// ============================================================
+// Citations
+// ============================================================
+model Citation {
+  id        String  @id @default(uuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  title     String
+  url       String
+  source    String
+  relevance Float   @default(1.0)
+
+  @@index([messageId])
+  @@map("citations")
+}
+
+// ============================================================
+// Agent Logs
+// ============================================================
+model AgentLog {
+  id             String   @id @default(uuid())
+  userId         String
+  agentType      String
+  query          String
+  response       String   @default("")
+  confidence     Float?
+  processingTime Int
+  status         String
+  error          String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([agentType])
+  @@index([createdAt])
+  @@map("agent_logs")
+}
